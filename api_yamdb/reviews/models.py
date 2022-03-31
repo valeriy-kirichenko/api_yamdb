@@ -1,9 +1,7 @@
-from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-# from users import User
-
-User = get_user_model()
+from users.models import User
 
 
 class Categories(models.Model):
@@ -24,6 +22,24 @@ class Categories(models.Model):
         return self.name
 
 
+class Genres(models.Model):
+    name = models.CharField(
+        max_length=35,
+        verbose_name='Жанр'
+    )
+    slug = models.SlugField(
+        unique=True,
+        verbose_name='Уникальное название латиницей'
+    )
+
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
+
+    def __str__(self):
+        return self.name
+
+
 class Titles(models.Model):
     name = models.CharField(
         max_length=200, verbose_name='Название произведения'
@@ -37,6 +53,12 @@ class Titles(models.Model):
         verbose_name='Категория',
         related_name='titles'
     )
+    genre = models.ManyToManyField(
+        Genres,
+        verbose_name="Жанр",
+        related_name="titles",
+        through='TitlesGenres'
+    )
 
     class Meta:
         verbose_name = 'Произведение'
@@ -46,35 +68,39 @@ class Titles(models.Model):
         return self.name
 
 
-class Genres(models.Model):
-    name = models.CharField(
-        max_length=35,
-        verbose_name='Жанр'
-    )
-    slug = models.SlugField(
-        unique=True,
-        verbose_name='Уникальное название латиницей'
-    )
-    works = models.ManyToManyField(
-        Titles, verbose_name="Произведения", related_name="works"
-    )
-
-    class Meta:
-        verbose_name = 'Жанр'
-        verbose_name_plural = 'Жанры'
-
-    def __str__(self):
-        return self.name
+class TitlesGenres(models.Model):
+    work = models.ForeignKey(Titles, on_delete=models.CASCADE)
+    genre = models.ForeignKey(Genres, on_delete=models.CASCADE)
 
 
 class Reviews(models.Model):
-    work = models.OneToOneField(
+    work = models.ForeignKey(
         Titles,
         on_delete=models.CASCADE,
         verbose_name="Произведение",
-        related_name="work"
+        related_name="review"
     )
     text = models.TextField(verbose_name="Отзыв")
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор',
+        related_name='review'
+    )
+    score = models.IntegerField(
+        blank=True,
+        null=True,
+        validators=[
+            MaxValueValidator(10),
+            MinValueValidator(1)
+        ],
+        verbose_name='Рейтинг'
+    )
+    pub_date = models.DateTimeField(
+        'Дата создания',
+        auto_now_add=True,
+        db_index=True
+    )
 
     def __str__(self):
         return self.text[:30]
@@ -85,7 +111,7 @@ class Reviews(models.Model):
 
 
 class Comments(models.Model):
-    review = models.OneToOneField(
+    review = models.ForeignKey(
         Reviews,
         on_delete=models.CASCADE,
         verbose_name="Отзыв",
