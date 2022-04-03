@@ -13,16 +13,16 @@ class UserSerializer(serializers.ModelSerializer):
         validators=[UniqueValidator(queryset=User.objects.all())], )
 
     class Meta:
-        fields = ("username", "email", "first_name",
-                  "last_name", "bio", "role")
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
         model = User
 
 
 class EditProfileSerializer(serializers.ModelSerializer):
     """Сериализатор редактирования профиля пользователя."""
     class Meta:
-        fields = ("username", "email", "first_name",
-                  "last_name", "bio", "role")
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
         model = User
         read_only_fields = ('role',)
 
@@ -40,7 +40,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return value
 
     class Meta:
-        fields = ("username", "email")
+        fields = ('username', 'email')
         model = User
 
 
