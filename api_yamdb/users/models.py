@@ -3,27 +3,22 @@ from django.db import models
 
 
 class User(AbstractUser):
+    """Пользователи"""
     ADMIN = 'admin'
     MODERATOR = 'moderator'
-    USER = 'user'
-    ROLES = [
-        (ADMIN, 'Administrator'),
+    DEFAULT_USER = 'user'
+    ROLES = (
+        (ADMIN, 'Admin'),
         (MODERATOR, 'Moderator'),
-        (USER, 'User'),
-    ]
+        (DEFAULT_USER, 'User'),)
 
     role = models.CharField(
         verbose_name='Роль',
-        max_length=50,
+        max_length=79,
         choices=ROLES,
-        default=USER
-    )
+        default=DEFAULT_USER)
+
     bio = models.TextField(
         verbose_name='О себе',
         null=True,
-        blank=True
-    )
-
-    @property
-    def is_admin(self):
-        return self.role == self.ADMIN
+        blank=True, )
