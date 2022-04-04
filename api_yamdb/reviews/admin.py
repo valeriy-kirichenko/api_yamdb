@@ -5,7 +5,7 @@ from .models import Genres, Titles, Categories, Reviews, Comments
 
 @admin.register(Titles)
 class TitlesAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'category')
+    list_display = ('id', 'name', 'category', 'year', 'description')
     actions_on_bottom = True
     list_editable = ('category',)
     search_fields = ('name',)
@@ -28,7 +28,7 @@ class GenresAdmin(admin.ModelAdmin):
 
 @admin.register(Reviews)
 class ReviewsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'text')
+    list_display = ('id', 'text', 'author', 'pub_date', 'score')
     actions_on_bottom = True
     search_fields = ('text',)
 
