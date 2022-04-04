@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from .models import Genres, Titles, Categories, Reviews, Comments
+from .models import Genre, Title, Category, Review, Comments
 
 
-@admin.register(Titles)
+@admin.register(Title)
 class TitlesAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'category', 'year', 'description')
     actions_on_bottom = True
@@ -12,21 +12,21 @@ class TitlesAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-@admin.register(Categories)
+@admin.register(Category)
 class CategoriesAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug')
     actions_on_bottom = True
     search_fields = ('name',)
 
 
-@admin.register(Genres)
+@admin.register(Genre)
 class GenresAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug')
     actions_on_bottom = True
     search_fields = ('name',)
 
 
-@admin.register(Reviews)
+@admin.register(Review)
 class ReviewsAdmin(admin.ModelAdmin):
     list_display = ('id', 'text', 'author', 'pub_date', 'score')
     actions_on_bottom = True
