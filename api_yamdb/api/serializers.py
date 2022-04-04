@@ -1,35 +1,35 @@
-from rest_framework import serializers, validators
+from rest_framework import serializers, validators, generics
 from rest_framework.permissions import SAFE_METHODS
 
-from reviews.models import Titles, Genres, Categories, Reviews, Comments
+from reviews.models import Title, Genre, Category, Review, Comments
 
 
 class GenresSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Genres
+        model = Genre
         fields = ('name', 'slug')
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Categories
+        model = Category
         fields = ('name', 'slug')
 
 
 class TitlesSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
-        queryset=Categories.objects.all(),
+        queryset=Category.objects.all(),
         slug_field='slug'
     )
     genre = serializers.SlugRelatedField(
-        queryset=Genres.objects.all(),
+        queryset=Genre.objects.all(),
         many=True,
         slug_field='slug'
     )
     rating = serializers.SerializerMethodField()
 
     class Meta:
-        model = Titles
+        model = Title
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
@@ -53,11 +53,12 @@ class TitlesSerializer(serializers.ModelSerializer):
         return None
 
 
-class CurrentWorkDefault:
+class CurrentTitleDefault:
     requires_context = True
 
     def __call__(self, serializer_field):
-        return Titles.objects.get(
+        return generics.get_object_or_404(
+            Title,
             id=serializer_field.context['view'].kwargs.get('title_id')
         )
 
@@ -66,7 +67,8 @@ class CurrentReviewDefault:
     requires_context = True
 
     def __call__(self, serializer_field):
-        return Reviews.objects.get(
+        return generics.get_object_or_404(
+            Review,
             id=serializer_field.context['view'].kwargs.get('review_id')
         )
 
@@ -78,15 +80,15 @@ class ReviewsSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault()
     )
     score = serializers.IntegerField(min_value=1, max_value=10)
-    work = serializers.HiddenField(default=CurrentWorkDefault())
+    title = serializers.HiddenField(default=CurrentTitleDefault())
 
     class Meta:
-        model = Reviews
+        model = Review
         fields = '__all__'
         validators = [
             validators.UniqueTogetherValidator(
-                queryset=Reviews.objects.all(),
-                fields=('work', 'author'),
+                queryset=Review.objects.all(),
+                fields=('title', 'author'),
                 message=('На произведение можно оставить '
                          'не более одного отзыва')
             )

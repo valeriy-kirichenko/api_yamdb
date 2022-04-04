@@ -6,7 +6,7 @@ from django.db import models
 from users.models import User
 
 
-class Categories(models.Model):
+class Category(models.Model):
     name = models.CharField(
         max_length=35,
         verbose_name='Категория'
@@ -24,7 +24,7 @@ class Categories(models.Model):
         return self.name
 
 
-class Genres(models.Model):
+class Genre(models.Model):
     name = models.CharField(
         max_length=35,
         verbose_name='Жанр'
@@ -42,7 +42,7 @@ class Genres(models.Model):
         return self.name
 
 
-class Titles(models.Model):
+class Title(models.Model):
     name = models.CharField(
         max_length=200, verbose_name='Название произведения'
     )
@@ -53,7 +53,7 @@ class Titles(models.Model):
         ],
     )
     category = models.ForeignKey(
-        Categories,
+        Category,
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
@@ -61,14 +61,14 @@ class Titles(models.Model):
         related_name='titles'
     )
     description = models.TextField(
-        verbose_name="Описание",
+        verbose_name='Описание',
         blank=True,
         null=True
     )
     genre = models.ManyToManyField(
-        Genres,
-        verbose_name="Жанр",
-        related_name="titles",
+        Genre,
+        verbose_name='Жанр',
+        related_name='titles',
         through='TitlesGenres'
     )
 
@@ -81,18 +81,18 @@ class Titles(models.Model):
 
 
 class TitlesGenres(models.Model):
-    work = models.ForeignKey(Titles, on_delete=models.CASCADE)
-    genre = models.ForeignKey(Genres, on_delete=models.CASCADE)
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
 
 
-class Reviews(models.Model):
-    work = models.ForeignKey(
-        Titles,
+class Review(models.Model):
+    title = models.ForeignKey(
+        Title,
         on_delete=models.CASCADE,
-        verbose_name="Произведение",
-        related_name="review"
+        verbose_name='Произведение',
+        related_name='review'
     )
-    text = models.TextField(verbose_name="Отзыв")
+    text = models.TextField(verbose_name='Отзыв')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -118,18 +118,20 @@ class Reviews(models.Model):
         return self.text[:30]
 
     class Meta:
+        ordering = ['-pub_date']
+        unique_together = ('title', 'author')
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
 
 
 class Comments(models.Model):
     review = models.ForeignKey(
-        Reviews,
+        Review,
         on_delete=models.CASCADE,
-        verbose_name="Отзыв",
-        related_name="comments"
+        verbose_name='Отзыв',
+        related_name='comments'
     )
-    text = models.TextField(verbose_name="Комментарий")
+    text = models.TextField(verbose_name='Комментарий')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -143,6 +145,7 @@ class Comments(models.Model):
     )
 
     class Meta:
+        ordering = ['-pub_date']
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
 
