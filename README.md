@@ -33,7 +33,7 @@ python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 ```
-
-###К проекту по адресу http://127.0.0.1:8000/redoc/ подключена документация API YaMDb.
+___
 :warning:
-###**Запросы к API начинаются с** `/api/v1/`
+**К проекту по адресу http://127.0.0.1:8000/redoc/ подключена документация API YaMDb.**
+**Запросы к API начинаются с `/api/v1/`**
