@@ -36,7 +36,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def validate_username(self, value):
         if value.lower() == 'me':
-            raise serializers.ValidationError(f"Username can't be called 'me'")
+            raise serializers.ValidationError("Username can't be called 'me'")
         return value
 
     class Meta:
