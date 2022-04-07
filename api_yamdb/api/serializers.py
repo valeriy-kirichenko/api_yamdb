@@ -1,22 +1,35 @@
+from django.db.utils import IntegrityError
 from rest_framework import serializers, validators, generics
 from rest_framework.permissions import SAFE_METHODS
 
 from reviews.models import Title, Genre, Category, Review, Comments
 
 
-class GenresSerializer(serializers.ModelSerializer):
+class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
-class CategoriesSerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ('name', 'slug')
 
 
-class TitlesSerializer(serializers.ModelSerializer):
+class ReadTitleSerializer(serializers.ModelSerializer):
+    category = CategorySerializer()
+    genre = GenreSerializer(many=True)
+    rating = serializers.IntegerField()
+
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category')
+        read_only_fields = ('category', 'genre', 'rating')
+
+
+class WriteTitleSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug'
@@ -26,83 +39,61 @@ class TitlesSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='slug'
     )
-    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super(TitlesSerializer, self).__init__(*args, **kwargs)
-
-        try:
-            if self.context['request'].method in SAFE_METHODS:
-                self.fields['category'] = CategoriesSerializer(read_only=True)
-                self.fields['genre'] = GenresSerializer(
-                    many=True, read_only=True
-                )
-        except KeyError:
-            pass
-
-    def get_rating(self, obj):
-        if (
-            self.context['request'].method in SAFE_METHODS
-            and obj.rating is not None
-        ):
-            return int(obj.rating)
-        return None
-
-
-class CurrentTitleDefault:
-    requires_context = True
-
-    def __call__(self, serializer_field):
-        return generics.get_object_or_404(
-            Title,
-            id=serializer_field.context['view'].kwargs.get('title_id')
-        )
-
-
-class CurrentReviewDefault:
-    requires_context = True
-
-    def __call__(self, serializer_field):
-        return generics.get_object_or_404(
-            Review,
-            id=serializer_field.context['view'].kwargs.get('review_id')
-        )
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        read_only=True,
         slug_field='username',
-        default=serializers.CurrentUserDefault()
+        default=serializers.CurrentUserDefault(),
+        read_only=True,
     )
     score = serializers.IntegerField(min_value=1, max_value=10)
-    title = serializers.HiddenField(default=CurrentTitleDefault())
+    title = serializers.HiddenField(
+        default=serializers.SerializerMethodField('get_title')
+    )
+
+    def get_title(self):
+        return generics.get_object_or_404(
+            Title, id=self.kwargs.get('title_id')
+        )
+
+    def validate(self, data):
+        title = self.context['request'].parser_context['kwargs']['title_id']
+        author = self.context['request'].user
+        review = Review.objects.filter(title_id=title, author=author)
+        if self.context['request'].method == 'POST':
+            if review.exists():
+                raise serializers.ValidationError(
+                    detail=('На произведение можно оставить '
+                            'не более одного отзыва'),
+                    code=400
+                )
+        return data
 
     class Meta:
         model = Review
-        fields = '__all__'
-        validators = [
-            validators.UniqueTogetherValidator(
-                queryset=Review.objects.all(),
-                fields=('title', 'author'),
-                message=('На произведение можно оставить '
-                         'не более одного отзыва')
-            )
-        ]
+        fields = ('id', 'text', 'author', 'score', 'pub_date', 'title')
 
 
 class CommentsSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        read_only=True,
         slug_field='username',
-        default=serializers.CurrentUserDefault()
+        default=serializers.CurrentUserDefault(),
+        read_only=True
     )
-    review = serializers.HiddenField(default=CurrentReviewDefault())
+    review = serializers.HiddenField(
+        default=serializers.SerializerMethodField('get_review')
+    )
+
+    def get_review(self):
+        return generics.get_object_or_404(
+            Review, id=self.kwargs.get('review_id')
+        )
 
     class Meta:
         model = Comments
-        fields = '__all__'
+        fields = ('id', 'text', 'author', 'pub_date', 'review')
