@@ -5,7 +5,7 @@ from users.views import UserViewSet, registration, get_token
 
 v1_router = DefaultRouter()
 
-v1_router.register('users', UserViewSet)
+v1_router.register(r'users', UserViewSet, basename='users')
 
 v1_auth_urls = [
     path('v1/auth/signup/', registration, name='registration'),
