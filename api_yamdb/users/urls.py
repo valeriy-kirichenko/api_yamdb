@@ -7,11 +7,12 @@ v1_router = DefaultRouter()
 
 v1_router.register('users', UserViewSet)
 
-urlpatterns = [
-    path('v1/', include(v1_router.urls)),
-]
-
-urlpatterns += [
+v1_auth_urls = [
     path('v1/auth/signup/', registration, name='registration'),
     path('v1/auth/token/', get_token, name='get_token')
-]  # так что-ли нужно?
+]
+
+urlpatterns = [
+    path('v1/', include(v1_router.urls)),
+    path('', include(v1_auth_urls))
+]

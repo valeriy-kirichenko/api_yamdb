@@ -49,19 +49,24 @@ class UserViewSet(viewsets.ModelViewSet):
 def registration(request):
     """Регистрация."""
     serializer = RegistrationSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    user = get_object_or_404(
-        User,
-        username=serializer.validated_data['username'], )
-    confirmation_code = default_token_generator.make_token(user)
-    send_mail(
-        subject='Registration',
-        message=f'Your code: {confirmation_code}',
-        from_email=None,
-        recipient_list=[user.email], )
+    if serializer.is_valid(raise_exception=True):
+        if not User.objects.filter(
+            username=serializer.validated_data['username']
+        ).exists():
+            serializer.save()
+        user = get_object_or_404(
+            User,
+            username=serializer.validated_data['username']
+        )
+        confirmation_code = default_token_generator.make_token(user)
+        send_mail(
+            subject='Registration',
+            message=f'Your code: {confirmation_code}',
+            from_email='support@yamdb.ru',
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
     return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
