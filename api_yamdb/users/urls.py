@@ -9,6 +9,9 @@ v1_router.register('users', UserViewSet)
 
 urlpatterns = [
     path('v1/', include(v1_router.urls)),
+]
+
+urlpatterns += [
     path('v1/auth/signup/', registration, name='registration'),
     path('v1/auth/token/', get_token, name='get_token')
-]
+]  # так что-ли нужно?

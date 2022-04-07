@@ -22,3 +22,10 @@ class User(AbstractUser):
         verbose_name='О себе',
         null=True,
         blank=True, )
+
+    @property
+    def is_admin(self):
+        return self.role == User.ADMIN or self.is_staff or self.is_superuser
+
+    def __str__(self):
+        return self.username
