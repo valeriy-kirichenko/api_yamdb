@@ -1,8 +1,62 @@
-from django.db.utils import IntegrityError
-from rest_framework import serializers, validators, generics
-from rest_framework.permissions import SAFE_METHODS
+import re
 
-from reviews.models import Title, Genre, Category, Review, Comments
+from rest_framework import serializers, generics
+
+from reviews.models import Title, Genre, Category, Review, Comments, User
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователя."""
+
+    username = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True)
+
+    class Meta:
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
+        model = User
+
+    def validate_username(self, username):
+        if username.lower() == 'me':
+            raise serializers.ValidationError(
+                f'Недопустимое имя пользователя "{username}"')
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError(
+                f'Пользователь с никнеймом "{username}" уже зарегистрирован')
+        elif re.match(r'^[\w.@+-]+\Z', username) is None:
+            raise serializers.ValidationError(
+                f'Недопустимое имя пользователя "{username}"')
+        return username
+
+    def validate_email(self, email):
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError(
+                f'Email: {email} уже зарегистрирован')
+        return email
+
+
+class EditProfileSerializer(UserSerializer):
+    """Сериализатор редактирования профиля пользователя."""
+
+    class Meta(UserSerializer.Meta):
+        read_only_fields = ('role',)
+
+
+class RegistrationSerializer(UserSerializer):
+    """Сериализатор регистрации пользователя."""
+
+    class Meta(UserSerializer.Meta):
+        fields = ('username', 'email')
+
+
+class TokenSerializer(UserSerializer):
+    """Сериализатор токена."""
+
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
+
+    class Meta(UserSerializer.Meta):
+        fields = ('username', 'confirmation_code')
 
 
 class GenreSerializer(serializers.ModelSerializer):
