@@ -87,7 +87,7 @@ python manage.py runserver
 ----------
 * **Кириченко Валерий Михайлович**
  GitHub - [valeriy-kirichenko](https://github.com/valeriy-kirichenko)
-* **Валитов ильмир илсурович**
+* **Валитов Ильмир Илсурович**
 GitHub - [CoockieVii](https://github.com/CoockieVii)
 ----------
 Документация к проекту с примерами запросов и ответов
