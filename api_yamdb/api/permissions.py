@@ -18,14 +18,7 @@ class IsAdminOrReadOnly(BasePermission):
 
 class IsAuthorOrStaffOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
-        if request.method == 'POST':
-            return not request.user.is_anonymous()
-
-        if request.method in ('PATCH', 'DELETE'):
-            return (request.user == obj.author
-                    or request.user.role == User.MODERATOR
-                    or request.user.is_admin)
-
-        if request.method in SAFE_METHODS:
-            return True
-        return False
+        return (request.user.is_anonymous and request.method in SAFE_METHODS
+                or request.user == obj.author
+                or request.user.role == User.MODERATOR
+                or request.user.is_admin)
