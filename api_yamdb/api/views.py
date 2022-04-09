@@ -1,6 +1,5 @@
 import random
 
-from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django_filters.rest_framework.backends import DjangoFilterBackend
@@ -10,7 +9,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (AllowAny, IsAuthenticatedOrReadOnly,
                                         IsAuthenticated, SAFE_METHODS)
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .filters import TitleFilter
 from .permissions import IsAdmin, IsAuthorOrStaffOrReadOnly, IsAdminOrReadOnly
@@ -74,7 +73,7 @@ def registration(request):
     send_mail(
         subject='Registration',
         message=f'Your code: {confirmation_code}',
-        from_email='support@yamdb.ru',
+        from_email=DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
         fail_silently=False,
     )

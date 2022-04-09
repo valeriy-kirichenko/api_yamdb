@@ -1,9 +1,6 @@
 import re
 
-from django.core.exceptions import MultipleObjectsReturned
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers, generics
-from rest_framework.permissions import SAFE_METHODS
 from reviews.models import Title, Genre, Category, Review, Comments, User
 
 
