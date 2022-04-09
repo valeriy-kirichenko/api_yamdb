@@ -34,7 +34,7 @@
 ----------
 * Python 3.9+
 * Works on Linux, Windows, macOS, BSD
-* 
+
 Стек технологий
 ----------
 * Python 3.9
