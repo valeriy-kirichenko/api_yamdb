@@ -37,7 +37,7 @@ class RegistrationSerializer(serializers.Serializer):
     def validate_username(self, username):
         if username == 'me':
             raise serializers.ValidationError(
-                f"Запрещено называть Username: {username}")
+                f'Запрещено называть Username: {username}')
         return username
 
     def validate(self, data):

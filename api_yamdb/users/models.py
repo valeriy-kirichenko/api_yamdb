@@ -35,8 +35,10 @@ class User(AbstractUser):
         null=True,
         blank=True, )
 
-    # Секретный код пользователя.
-    confirmation_code = models.CharField(max_length=4, blank=True, )
+    confirmation_code = models.CharField(
+        'Секретный код',
+        max_length=4,
+        blank=True, )
 
     @property
     def is_admin(self):
