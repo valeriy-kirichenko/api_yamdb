@@ -86,7 +86,7 @@ python manage.py runserver
 Авторы:
 ----------
 * **Кириченко Валерий Михайлович**
- GitHub - [valeriy-kirichenko](https://github.com/valeriy-kirichenko)
+GitHub - [valeriy-kirichenko](https://github.com/valeriy-kirichenko)
 * **Валитов Ильмир Илсурович**
 GitHub - [CoockieVii](https://github.com/CoockieVii)
 ----------
