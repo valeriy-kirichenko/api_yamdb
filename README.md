@@ -34,7 +34,7 @@
 ----------
 * Python 3.9+
 * Works on Linux, Windows, macOS, BSD
-* 
+
 Стек технологий
 ----------
 * Python 3.9
@@ -85,8 +85,10 @@ python manage.py runserver
 ----------
 Авторы:
 ----------
-* [valeriy-kirichenko](https://github.com/valeriy-kirichenko) (GitHub)
-* [CoockieVii](https://github.com/CoockieVii) (GitHub)
+* **Кириченко Валерий Михайлович**
+ GitHub - [valeriy-kirichenko](https://github.com/valeriy-kirichenko)
+* **Валитов Ильмир Илсурович**
+GitHub - [CoockieVii](https://github.com/CoockieVii)
 ----------
 Документация к проекту с примерами запросов и ответов
 ----------

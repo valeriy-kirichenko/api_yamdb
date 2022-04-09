@@ -1,7 +1,9 @@
 import re
 
+from django.core.exceptions import MultipleObjectsReturned
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers, generics
-
+from rest_framework.permissions import SAFE_METHODS
 from reviews.models import Title, Genre, Category, Review, Comments, User
 
 
@@ -33,6 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 f'Email: {email} уже зарегистрирован')
         return email
+
 
 
 class EditProfileSerializer(UserSerializer):
@@ -80,7 +83,8 @@ class ReadTitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')
-        read_only_fields = ('category', 'genre', 'rating')
+        read_only_fields = ('id', 'name', 'year', 'rating',
+                            'description', 'genre', 'category')
 
 
 class WriteTitleSerializer(serializers.ModelSerializer):
@@ -106,21 +110,18 @@ class ReviewsSerializer(serializers.ModelSerializer):
         read_only=True,
     )
     score = serializers.IntegerField(min_value=1, max_value=10)
-    title = serializers.HiddenField(
-        default=serializers.SerializerMethodField('get_title')
-    )
-
-    def get_title(self):
-        return generics.get_object_or_404(
-            Title, id=self.kwargs.get('title_id')
-        )
 
     def validate(self, data):
-        title = self.context['request'].parser_context['kwargs']['title_id']
-        author = self.context['request'].user
-        review = Review.objects.filter(title_id=title, author=author)
         if self.context['request'].method == 'POST':
-            if review.exists():
+            title = generics.get_object_or_404(
+                Title,
+                id=self.context['request'].parser_context['kwargs'].get(
+                    'title_id')
+            )
+            if Review.objects.filter(
+                title_id=title.id,
+                author=self.context['request'].user
+            ).exists():
                 raise serializers.ValidationError(
                     detail=('На произведение можно оставить '
                             'не более одного отзыва'),
@@ -130,7 +131,7 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ('id', 'text', 'author', 'score', 'pub_date', 'title')
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
 
 
 class CommentsSerializer(serializers.ModelSerializer):
@@ -139,15 +140,24 @@ class CommentsSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault(),
         read_only=True
     )
-    review = serializers.HiddenField(
-        default=serializers.SerializerMethodField('get_review')
-    )
 
-    def get_review(self):
-        return generics.get_object_or_404(
-            Review, id=self.kwargs.get('review_id')
-        )
+    def validate(self, data):
+        if self.context['request'].method == 'POST':
+            title = generics.get_object_or_404(
+                Title,
+                id=self.context['request'].parser_context['kwargs'].get(
+                    'title_id')
+            )
+            if not Review.objects.filter(
+                title_id=title.id,
+                author=self.context['request'].user
+            ).exists():
+                raise serializers.ValidationError(
+                    detail=('Отзыв не найден'),
+                    code=400
+                )
+        return data
 
     class Meta:
         model = Comments
-        fields = ('id', 'text', 'author', 'pub_date', 'review')
+        fields = ('id', 'text', 'author', 'pub_date')

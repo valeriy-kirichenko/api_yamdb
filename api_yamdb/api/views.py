@@ -6,7 +6,7 @@ from rest_framework import viewsets, generics, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (AllowAny, IsAuthenticatedOrReadOnly,
-                                        IsAuthenticated)
+                                        IsAuthenticated, SAFE_METHODS)
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -18,7 +18,7 @@ from .serializers import (ReadTitleSerializer, CommentsSerializer,
                           UserSerializer, EditProfileSerializer,
                           RegistrationSerializer, TokenSerializer)
 from api_yamdb.settings import DEFAULT_FROM_EMAIL
-from core.views import CategoriesGenresViewSet
+from core.views import CreateListDestroyModelMixinSet
 from reviews.models import Title, Genre, Category, Review, User
 
 OK = 200
@@ -114,9 +114,20 @@ class TitlesViewSet(viewsets.ModelViewSet):
     ordering_fields = ('name',)
 
     def get_serializer_class(self):
-        if self.action == 'list' or self.action == 'retrieve':
+        if self.request.method in SAFE_METHODS:
             return ReadTitleSerializer
         return WriteTitleSerializer
+
+
+class CategoriesGenresViewSet(CreateListDestroyModelMixinSet):
+    permission_classes = (IsAdminOrReadOnly,)
+    paginathion_class = (LimitOffsetPagination,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+
+    class Meta:
+        abstract = True
 
 
 class CategoriesViewSet(CategoriesGenresViewSet):
@@ -129,31 +140,24 @@ class GenresViewSet(CategoriesGenresViewSet):
     serializer_class = GenreSerializer
 
 
-def get_title(title_id):
-    return generics.get_object_or_404(Title, id=title_id)
-
-
-def get_review(review_id, title_id):
-    return generics.get_object_or_404(
-        Review,
-        id=review_id,
-        title=get_title(title_id)
-    )
-
-
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewsSerializer
-    permission_classes = (IsAuthorOrStaffOrReadOnly, IsAuthenticatedOrReadOnly)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrStaffOrReadOnly)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
+    def get_title(self, id=None):
+        return generics.get_object_or_404(
+            Title, id=self.kwargs.get('title_id')
+        )
+
     def get_queryset(self):
-        return get_title(self.kwargs.get('title_id')).reviews.all()
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user,
-            title=get_title(self.kwargs.get('title_id'))
+            title=self.get_title()
         )
 
 
@@ -163,15 +167,20 @@ class CommentsViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('text',)
 
+    def get_review(self):
+        return generics.get_object_or_404(
+            Review,
+            id=self.kwargs.get('review_id'),
+            title=ReviewsViewSet.get_title(
+                self, id=self.kwargs.get('title_id')
+            )
+        )
+
     def get_queryset(self):
-        return get_review(
-            self.kwargs.get('review_id'), self.kwargs.get('title_id')
-        ).comments.all()
+        return self.get_review().comments.all()
 
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user,
-            review=get_review(
-                self.kwargs.get('review_id'), self.kwargs.get('title_id')
-            )
+            review=self.get_review()
         )
