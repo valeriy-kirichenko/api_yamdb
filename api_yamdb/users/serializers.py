@@ -1,15 +1,11 @@
 import re
-
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from users.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор пользователя."""
-    email = serializers.EmailField(
-        validators=[UniqueValidator(queryset=User.objects.all())], )
 
     class Meta:
         fields = ('username', 'email', 'first_name',
@@ -17,22 +13,13 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
 
     def validate_username(self, username):
-        if username.lower() == 'me':
+        if username == 'me':
             raise serializers.ValidationError(
                 f"Username can't be called {username}")
-        if User.objects.filter(username=username).exists():
-            raise serializers.ValidationError(
-                f'Пользователь с никнеймом {username} уже зарегистрирован')
-        elif re.match('^[\w.@+-]+\Z', username) is None:
+        if re.match('^[\w.@+-]+\Z', username) is None:
             raise serializers.ValidationError(
                 f'Недопустимое имя пользователя: {username}')
         return username
-
-    def validate_email(self, email):
-        if User.objects.filter(email=email).exists():
-            raise serializers.ValidationError(
-                f'Email: {email} уже зарегистрирован')
-        return email
 
 
 class EditProfileSerializer(UserSerializer):
@@ -42,23 +29,26 @@ class EditProfileSerializer(UserSerializer):
         read_only_fields = ('role',)
 
 
-class RegistrationSerializer(UserSerializer):
+class RegistrationSerializer(serializers.Serializer):
     """Сериализатор регистрации пользователя."""
+    username = serializers.CharField(required=True, max_length=150, )
+    email = serializers.EmailField(required=True, max_length=254, )
 
-    class Meta(UserSerializer.Meta):
-        fields = ('username', 'email')
+    def validate_username(self, username):
+        if username == 'me':
+            raise serializers.ValidationError(
+                f"Запрещено называть Username: {username}")
+        return username
+
+    def validate(self, data):
+        name_search_in_db = User.objects.filter(username=data.get('username'))
+        email_search_in_db = User.objects.filter(email=data.get('email'))
+        if name_search_in_db or email_search_in_db:
+            raise serializers.ValidationError(f'Дублирование в базе данных!')
+        return data
 
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор токена."""
-
-    username = serializers.CharField(
-        required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())], )
-    confirmation_code = serializers.CharField()
-
-    def validate_username(self, username):
-        if username.lower() == 'me':
-            raise serializers.ValidationError(
-                f"Username can't be called {username}")
-        return username
+    username = serializers.CharField(required=True, max_length=150, )
+    confirmation_code = serializers.CharField(required=True, )

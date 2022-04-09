@@ -7,12 +7,12 @@ v1_router = DefaultRouter()
 
 v1_router.register('users', UserViewSet)
 
-v1_auth_urls = [
-    path('v1/auth/signup/', registration, name='registration'),
-    path('v1/auth/token/', get_token, name='get_token')
+auth_urls = [
+    path('auth/signup/', registration, name='registration'),
+    path('auth/token/', get_token, name='get_token')
 ]
 
 urlpatterns = [
     path('v1/', include(v1_router.urls)),
-    path('', include(v1_auth_urls))
+    path('v1/', include(auth_urls))
 ]

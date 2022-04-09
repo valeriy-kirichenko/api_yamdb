@@ -2,7 +2,7 @@ from rest_framework import permissions
 
 
 class IsAdmin(permissions.BasePermission):
-    """Разрешение для Админа и Суперпользователя."""
+    """Разрешение для Админа."""
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.is_admin
