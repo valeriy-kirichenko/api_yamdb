@@ -75,8 +75,7 @@ class ReadTitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')
-        read_only_fields = ('id', 'name', 'year', 'rating',
-                            'description', 'genre', 'category')
+        read_only_fields = ('__all__',)
 
 
 class WriteTitleSerializer(serializers.ModelSerializer):
@@ -104,21 +103,22 @@ class ReviewsSerializer(serializers.ModelSerializer):
     score = serializers.IntegerField(min_value=1, max_value=10)
 
     def validate(self, data):
-        if self.context['request'].method == 'POST':
-            title = generics.get_object_or_404(
-                Title,
-                id=self.context['request'].parser_context['kwargs'].get(
-                    'title_id')
+        if self.context['request'].method != 'POST':
+            return data
+        title = generics.get_object_or_404(
+            Title,
+            id=self.context['request'].parser_context['kwargs'].get(
+                'title_id')
+        )
+        if Review.objects.filter(
+            title_id=title.id,
+            author=self.context['request'].user
+        ).exists():
+            raise serializers.ValidationError(
+                detail=('На произведение можно оставить '
+                        'не более одного отзыва'),
+                code=400
             )
-            if Review.objects.filter(
-                title_id=title.id,
-                author=self.context['request'].user
-            ).exists():
-                raise serializers.ValidationError(
-                    detail=('На произведение можно оставить '
-                            'не более одного отзыва'),
-                    code=400
-                )
         return data
 
     class Meta:
@@ -134,20 +134,21 @@ class CommentsSerializer(serializers.ModelSerializer):
     )
 
     def validate(self, data):
-        if self.context['request'].method == 'POST':
-            title = generics.get_object_or_404(
-                Title,
-                id=self.context['request'].parser_context['kwargs'].get(
-                    'title_id')
+        if self.context['request'].method != 'POST':
+            return data
+        title = generics.get_object_or_404(
+            Title,
+            id=self.context['request'].parser_context['kwargs'].get(
+                'title_id')
+        )
+        if not Review.objects.filter(
+            title_id=title.id,
+            author=self.context['request'].user
+        ).exists():
+            raise serializers.ValidationError(
+                detail=('Отзыв не найден'),
+                code=400
             )
-            if not Review.objects.filter(
-                title_id=title.id,
-                author=self.context['request'].user
-            ).exists():
-                raise serializers.ValidationError(
-                    detail=('Отзыв не найден'),
-                    code=400
-                )
         return data
 
     class Meta:
