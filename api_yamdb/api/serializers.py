@@ -1,25 +1,16 @@
-import re
-
 from rest_framework import serializers, generics
+
+from core.mixins import ValidateMixin
 from reviews.models import Title, Genre, Category, Review, Comments, User
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(ValidateMixin, serializers.ModelSerializer):
     """Сериализатор пользователя."""
 
     class Meta:
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
         model = User
-
-    def validate_username(self, username):
-        if username == 'me':
-            raise serializers.ValidationError(
-                f'Недопустимое имя пользователя: "{username}"')
-        if re.match(r'^[\w.@+-]+\Z', username) is None:
-            raise serializers.ValidationError(
-                f'Недопустимое имя пользователя: "{username}"')
-        return username
 
 
 class EditProfileSerializer(UserSerializer):
@@ -29,23 +20,10 @@ class EditProfileSerializer(UserSerializer):
         read_only_fields = ('role',)
 
 
-class RegistrationSerializer(serializers.Serializer):
+class RegistrationSerializer(ValidateMixin, serializers.Serializer):
     """Сериализатор регистрации пользователя."""
-    username = serializers.CharField(required=True, max_length=150, )
-    email = serializers.EmailField(required=True, max_length=254, )
-
-    def validate_username(self, username):
-        if username == 'me':
-            raise serializers.ValidationError(
-                f'Запрещено называть Username: {username}')
-        return username
-
-    def validate(self, data):
-        name_search_in_db = User.objects.filter(username=data.get('username'))
-        email_search_in_db = User.objects.filter(email=data.get('email'))
-        if name_search_in_db or email_search_in_db:
-            raise serializers.ValidationError('Дублирование в базе данных!')
-        return data
+    username = serializers.CharField(required=True, max_length=150)
+    email = serializers.EmailField(required=True, max_length=254)
 
 
 class TokenSerializer(serializers.Serializer):

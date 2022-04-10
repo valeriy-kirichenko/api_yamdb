@@ -5,7 +5,7 @@ from .models import Genre, Title, Category, Review, Comments, User
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'role', 'bio')
+    list_display = ('username', 'id', 'role', 'confirmation_code')
     actions_on_bottom = True
     list_editable = ('role',)
     search_fields = ('username',)
