@@ -59,41 +59,34 @@ class UserViewSet(viewsets.ModelViewSet):
 @permission_classes([AllowAny])
 def registration(request):
     """Регистрация пользователя и восстановление секретного кода."""
-    confirmation_code = random.randint(1000, 9999)
     serializer = RegistrationSerializer(data=request.data)
-    if serializer.is_valid(raise_exception=False):
-        username = serializer.validated_data['username']
-        email = serializer.validated_data['email']
-        check_username = User.objects.filter(username=username).exists()
-        check_email = User.objects.filter(email=email).exists()
-        if check_username and check_email:
-            User.objects.filter(username=username).update(
-                confirmation_code=confirmation_code)
-            send_mail(
-                subject='Recovery.',
-                message=f'Your code: {confirmation_code}',
-                from_email=DEFAULT_FROM_EMAIL,
-                recipient_list=[serializer.validated_data['email']],
-                fail_silently=False,
-            )
-            return Response(serializer.data, status=OK)
-        validated_username = User.objects.filter(username=username).exists()
-        validated_email = User.objects.filter(email=email).exists()
-        if (not validated_username) and (not validated_email):
-            user, created = User.objects.get_or_create(
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data['username']
+    email = serializer.validated_data['email']
+    confirmation_code = random.randint(1000, 9999)
+    try:
+        duplicate_username = User.objects.filter(username=username).exists()
+        duplicate_email = User.objects.filter(email=email).exists()
+        if duplicate_username and duplicate_email:
+            user = User.objects.get_or_create(username=username, email=email)
+            user.confirmation_code = confirmation_code
+        elif duplicate_username or duplicate_email:
+            return Response(serializer.errors, status=BAD_REQUEST)
+        else:
+            User.objects.create(
                 username=username,
                 email=email,
-                confirmation_code=confirmation_code
-            )
-            send_mail(
-                subject='Registration.',
-                message=f'Your code: {confirmation_code}',
-                from_email=DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
-            return Response(serializer.data, status=OK)
-    return Response(serializer.errors, status=BAD_REQUEST)
+                confirmation_code=confirmation_code)
+        send_mail(
+            subject='Registration.',
+            message=f'Your code: {confirmation_code}',
+            from_email=DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        return Response(serializer.data, status=OK)
+    except AttributeError:
+        return Response(serializer.errors, status=BAD_REQUEST)
 
 
 @api_view(['POST'])
