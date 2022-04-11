@@ -28,8 +28,10 @@ class User(AbstractUser):
         choices=ROLES,
         default=USER)
     bio = models.TextField(verbose_name='О себе', null=True, blank=True, )
-    confirmation_code = models.CharField('Секретный код', max_length=4,
-                                         blank=True, )
+    confirmation_code = models.CharField(
+        'Секретный код',
+        max_length=4,
+        blank=True, )
 
     @property
     def is_admin(self):
