@@ -64,29 +64,26 @@ def registration(request):
     username = serializer.validated_data['username']
     email = serializer.validated_data['email']
     confirmation_code = random.randint(1000, 9999)
-    try:
-        duplicate_username = User.objects.filter(username=username).exists()
-        duplicate_email = User.objects.filter(email=email).exists()
-        if duplicate_username and duplicate_email:
-            user = User.objects.get_or_create(username=username, email=email)
-            user[0].confirmation_code = confirmation_code
-        elif duplicate_username or duplicate_email:
-            return Response(serializer.errors, status=BAD_REQUEST)
-        else:
-            User.objects.create(
-                username=username,
-                email=email,
-                confirmation_code=confirmation_code)
-        send_mail(
-            subject='Registration.',
-            message=f'Your code: {confirmation_code}',
-            from_email=DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False,
-        )
-        return Response(serializer.data, status=OK)
-    except AttributeError:
+    duplicate_username = User.objects.filter(username=username).exists()
+    duplicate_email = User.objects.filter(email=email).exists()
+    if duplicate_username and duplicate_email:
+        user = User.objects.get_or_create(username=username, email=email)
+        user[0].confirmation_code = confirmation_code
+    elif duplicate_username or duplicate_email:
         return Response(serializer.errors, status=BAD_REQUEST)
+    else:
+        User.objects.create(
+            username=username,
+            email=email,
+            confirmation_code=confirmation_code)
+    send_mail(
+        subject='Registration.',
+        message=f'Your code: {confirmation_code}',
+        from_email=DEFAULT_FROM_EMAIL,
+        recipient_list=[email],
+        fail_silently=False,
+    )
+    return Response(serializer.data, status=OK)
 
 
 @api_view(['POST'])
