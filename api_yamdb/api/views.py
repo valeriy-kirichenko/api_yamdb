@@ -69,7 +69,7 @@ def registration(request):
         duplicate_email = User.objects.filter(email=email).exists()
         if duplicate_username and duplicate_email:
             user = User.objects.get_or_create(username=username, email=email)
-            user.confirmation_code = confirmation_code
+            user[0].confirmation_code = confirmation_code
         elif duplicate_username or duplicate_email:
             return Response(serializer.errors, status=BAD_REQUEST)
         else:
