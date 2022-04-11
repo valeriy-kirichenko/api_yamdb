@@ -1,5 +1,6 @@
 import random
 from django.core.mail import send_mail
+from django.db import IntegrityError
 from django.db.models import Avg
 from django_filters.rest_framework.backends import DjangoFilterBackend
 from rest_framework import viewsets, generics, filters
@@ -24,6 +25,9 @@ from reviews.models import Title, Genre, Category, Review, User
 OK = 200
 BAD_REQUEST = 400
 METHOD_NOT_ALLOWED = 405
+
+BAD_REQUEST_MESSAGE = ('В базе данных отсутствует пользователь '
+                       'с таким "username" или "email"')
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -59,41 +63,26 @@ class UserViewSet(viewsets.ModelViewSet):
 @permission_classes([AllowAny])
 def registration(request):
     """Регистрация пользователя и восстановление секретного кода."""
-    confirmation_code = random.randint(1000, 9999)
     serializer = RegistrationSerializer(data=request.data)
-    if serializer.is_valid(raise_exception=False):
-        username = serializer.validated_data['username']
-        email = serializer.validated_data['email']
-        check_username = User.objects.filter(username=username).exists()
-        check_email = User.objects.filter(email=email).exists()
-        if check_username and check_email:
-            User.objects.filter(username=username).update(
-                confirmation_code=confirmation_code)
-            send_mail(
-                subject='Recovery.',
-                message=f'Your code: {confirmation_code}',
-                from_email=DEFAULT_FROM_EMAIL,
-                recipient_list=[serializer.validated_data['email']],
-                fail_silently=False,
-            )
-            return Response(serializer.data, status=OK)
-        validated_username = User.objects.filter(username=username).exists()
-        validated_email = User.objects.filter(email=email).exists()
-        if (not validated_username) and (not validated_email):
-            user, created = User.objects.get_or_create(
-                username=username,
-                email=email,
-                confirmation_code=confirmation_code
-            )
-            send_mail(
-                subject='Registration.',
-                message=f'Your code: {confirmation_code}',
-                from_email=DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
-            return Response(serializer.data, status=OK)
-    return Response(serializer.errors, status=BAD_REQUEST)
+    serializer.is_valid(raise_exception=True)
+    confirmation_code = random.randint(1000, 9999)
+    try:
+        user, created = User.objects.get_or_create(
+            username=serializer.validated_data['username'],
+            email=serializer.validated_data['email'],
+        )
+    except IntegrityError:
+        return Response(BAD_REQUEST_MESSAGE, status=BAD_REQUEST)
+    user.confirmation_code = confirmation_code
+    user.save()
+    send_mail(
+        subject='Registration.',
+        message=f'Your code: {confirmation_code}',
+        from_email=DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=False,
+    )
+    return Response(serializer.data, status=OK)
 
 
 @api_view(['POST'])
