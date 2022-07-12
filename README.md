@@ -53,7 +53,7 @@ git clone 'git@github.com:valeriy-kirichenko/api_yamdb.git'
 или
 git clone 'git@github.com:CoockieVii/api_yamdb.git'
 
-cd api_yamdb
+cd api_yamdb/
 ```
 2. Cоздать и активировать виртуальное окружение:
 ```bash
@@ -69,14 +69,12 @@ pip install -r requirements.txt
 ```
 4. Выполнить миграции:
 ```bash
-cd api_yamdb
-
+cd api_yamdb/
+python manage.py makemigrations
 python manage.py migrate
 ```
 5. Загрузить данные в БД:
 ```bash
-cd api_yamdb/api_yamdb
-
 python manage.py importcsv
 ```
 6. Запустить проект (в режиме сервера Django):
