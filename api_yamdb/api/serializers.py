@@ -5,7 +5,7 @@ from reviews.models import Title, Genre, Category, Review, Comments, User
 
 
 class UserSerializer(ValidateMixin, serializers.ModelSerializer):
-    """Сериализатор пользователя."""
+    """Сериализатор для работы с пользователями."""
 
     class Meta:
         fields = ('username', 'email', 'first_name',
@@ -14,37 +14,45 @@ class UserSerializer(ValidateMixin, serializers.ModelSerializer):
 
 
 class EditProfileSerializer(UserSerializer):
-    """Сериализатор редактирования профиля пользователя."""
+    """Сериализатор для работы с профилем пользователя."""
 
     class Meta(UserSerializer.Meta):
         read_only_fields = ('role',)
 
 
 class RegistrationSerializer(ValidateMixin, serializers.Serializer):
-    """Сериализатор регистрации пользователя."""
+    """Сериализатор для регистрации пользователя."""
+
     username = serializers.CharField(required=True, max_length=150)
     email = serializers.EmailField(required=True, max_length=254)
 
 
 class TokenSerializer(serializers.Serializer):
-    """Сериализатор токена."""
+    """Сериализатор для получения токена."""
+
     username = serializers.CharField(required=True, max_length=150, )
     confirmation_code = serializers.CharField(required=True, )
 
 
 class GenreSerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с жанрами."""
+
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с категориями."""
+
     class Meta:
         model = Category
         fields = ('name', 'slug')
 
 
 class ReadTitleSerializer(serializers.ModelSerializer):
+    """Сериализатор для получения списка произведений."""
+
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
     rating = serializers.IntegerField()
@@ -57,6 +65,8 @@ class ReadTitleSerializer(serializers.ModelSerializer):
 
 
 class WriteTitleSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания произведения."""
+
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug'
@@ -73,6 +83,8 @@ class WriteTitleSerializer(serializers.ModelSerializer):
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с отзывами."""
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         default=serializers.CurrentUserDefault(),
@@ -81,6 +93,19 @@ class ReviewsSerializer(serializers.ModelSerializer):
     score = serializers.IntegerField(min_value=1, max_value=10)
 
     def validate(self, data):
+        """Валидация отзывов.
+
+        Args:
+            data (dict): словарь с данными для валидации.
+
+        Raises:
+            serializers.ValidationError: ошибка при попытке оставить более
+            одного отзыва.
+
+        Returns:
+            dict: словарь с проверенными данными.
+        """
+
         if self.context['request'].method != 'POST':
             return data
         title = generics.get_object_or_404(
@@ -105,6 +130,8 @@ class ReviewsSerializer(serializers.ModelSerializer):
 
 
 class CommentsSerializer(serializers.ModelSerializer):
+    """Сериализатор для работы с комментариями."""
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         default=serializers.CurrentUserDefault(),
@@ -112,6 +139,18 @@ class CommentsSerializer(serializers.ModelSerializer):
     )
 
     def validate(self, data):
+        """Валидация комментариев.
+
+        Args:
+            data (dict): словарь с данными для валидации.
+
+        Raises:
+            serializers.ValidationError: ошибка при отсутсвии отзыва.
+
+        Returns:
+            dict: словарь с проверенными данными.
+        """
+
         if self.context['request'].method != 'POST':
             return data
         title = generics.get_object_or_404(
