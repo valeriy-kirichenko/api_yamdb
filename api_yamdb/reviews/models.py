@@ -7,6 +7,7 @@ from .validators import year_validator
 
 class User(AbstractUser):
     """Пользователи"""
+
     ADMIN = 'admin'
     MODERATOR = 'moderator'
     USER = 'user'
