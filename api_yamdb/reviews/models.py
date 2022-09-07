@@ -4,15 +4,7 @@ from django.db import models
 
 from .validators import year_validator
 
-ADMIN = 'admin'
-MODERATOR = 'moderator'
-USER = 'user'
-
-ROLES = (
-    (ADMIN, 'Admin'),
-    (MODERATOR, 'Moderator'),
-    (USER, 'User'),
-)
+ROLES = ('admin', 'Admin'), ('moderator', 'Moderator'), ('user', 'User')
 
 
 class User(AbstractUser):
@@ -40,7 +32,7 @@ class User(AbstractUser):
         verbose_name='Роль',
         max_length=max([len(role[0]) for role in ROLES]),
         choices=ROLES,
-        default=USER)
+        default='user')
     bio = models.TextField(verbose_name='О себе', null=True, blank=True, )
     confirmation_code = models.CharField(
         'Секретный код',
